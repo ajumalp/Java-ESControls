@@ -31,6 +31,7 @@ public class ESMainTest extends JFrame {
 				// new ECalendar();
 			}
 		});
-		setVisible(true);
+		
+		setVisible(true); 
 	}
 }
