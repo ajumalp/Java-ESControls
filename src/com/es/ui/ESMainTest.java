@@ -1,10 +1,8 @@
 package com.es.ui;
 
 import java.awt.BorderLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.Dimension;
 
-import javax.swing.JButton;
 import javax.swing.JFrame;
 
 public class ESMainTest extends JFrame {
@@ -17,21 +15,13 @@ public class ESMainTest extends JFrame {
 	}
 
 	public ESMainTest() {
-		// TODO Auto-generated constructor stub
-		JButton varButton = new JButton("Test");
-		setTitle("Test Frame");
-		setBounds(150, 150, 300, 300);
-		setLayout(new BorderLayout());		
-		add(new EDateTimePicker(), BorderLayout.NORTH);
-		varButton.addActionListener(new ActionListener() {
-			
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				// TODO Auto-generated method stub
-				// new ECalendar();
-			}
-		});
+		setLocationByPlatform(true);
+		setSize(new Dimension(250, 250));
+		setTitle("This is a test project");
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
-		setVisible(true); 
+		EDateTimePicker dateTimePicker = new EDateTimePicker();
+		getContentPane().add(dateTimePicker, BorderLayout.NORTH);
+		setVisible(true);
 	}
 }
