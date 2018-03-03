@@ -136,7 +136,6 @@ class ECalendar extends JDialog implements ItemListener, ActionListener {
 
 	private ECalendar FContext;
 	private ECalendarTable FCalTable;
-	private JPanel FTopPanel;
 	private JToolBar FNavigPnl;
 	private JComboBox<String> cbMonths;
 	private JComboBox<Integer> cbYears;
@@ -154,7 +153,6 @@ class ECalendar extends JDialog implements ItemListener, ActionListener {
 		FContext = this;
 		FCalTable = null;
 		FCalendarListener = null;
-		FTopPanel = new JPanel();
 		FNavigPnl = new JToolBar(JToolBar.HORIZONTAL);
 		cbMonths = new JComboBox<String>(new DateFormatSymbols().getShortMonths());
 		cbYears = new JComboBox<Integer>();
@@ -184,6 +182,11 @@ class ECalendar extends JDialog implements ItemListener, ActionListener {
 		setResizable(false);
 		setUndecorated(true);
 		Dimension varNvDim = new Dimension(22, 20);
+		FToday.setToolTipText("Today");
+		FPreYear.setToolTipText("Previous Year");
+		FPreMonth.setToolTipText("Previous Month");
+		FNextMonth.setToolTipText("Next Month");
+		FNextYear.setToolTipText("Next Year");
 		FToday.setPreferredSize(varNvDim);
 		FPreYear.setPreferredSize(varNvDim);
 		FPreMonth.setPreferredSize(varNvDim);
@@ -192,6 +195,7 @@ class ECalendar extends JDialog implements ItemListener, ActionListener {
 		cbYears.setPreferredSize(new Dimension(60, 20));
 		cbMonths.setPreferredSize(new Dimension(60, 20));
 
+		FNavigPnl.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 		FNavigPnl.setFloatable(false);
 		FNavigPnl.add(FPreYear);
 		FNavigPnl.add(FPreMonth);
@@ -202,14 +206,12 @@ class ECalendar extends JDialog implements ItemListener, ActionListener {
 		FNavigPnl.add(cbYears);
 		FNavigPnl.addSeparator(new Dimension(3, 1));
 		FNavigPnl.add(cbMonths);
-		FTopPanel.setLayout(new BorderLayout());
-		FTopPanel.setBorder(BorderFactory.createEmptyBorder());
-		FTopPanel.add(FNavigPnl, BorderLayout.CENTER);
 		JPanel varContPnl = new JPanel();
 		varContPnl.setLayout(new BorderLayout());
-		varContPnl.setBorder(BorderFactory.createRaisedBevelBorder());
+		varContPnl.setBorder(BorderFactory.createRaisedSoftBevelBorder());
 		setContentPane(varContPnl);
-		varContPnl.add(FTopPanel, BorderLayout.NORTH);
+		varContPnl.add(FNavigPnl, BorderLayout.NORTH);
+
 		UpdateCalendar(false);
 
 		/* Add Listeners */
@@ -244,7 +246,7 @@ class ECalendar extends JDialog implements ItemListener, ActionListener {
 	}
 
 	private int getTotalHeight() {
-		return (FCalTable.getRowHeight() * FCalTable.getRowCount()) + FTopPanel.getHeight() + 5;
+		return (FCalTable.getRowHeight() * FCalTable.getRowCount()) + FNavigPnl.getHeight() + 5;
 	}
 
 	@Override
@@ -273,7 +275,7 @@ class ECalendar extends JDialog implements ItemListener, ActionListener {
 		FSelectedDate.setMonth(cbMonths.getSelectedIndex());
 		FCalTable = new ECalendarTable(getSelectedDate());
 
-		add(FCalTable, BorderLayout.CENTER);
+		getContentPane().add(FCalTable, BorderLayout.CENTER);
 		FCalTable.AddOnSelectListener(new IECalendarTableListener() {
 
 			@Override
@@ -352,17 +354,17 @@ class ECalendarTable extends JTable {
 	private int iTodayRowIndex, iTodayColIndex;
 
 	public ECalendarTable(EDateTime aSelectedDate) {
-		// TODO Auto-generated constructor stub		
+		// TODO Auto-generated constructor stub
 		FCalendarTableListener = null;
 		FCalendar = aSelectedDate;
 		FContext = this;
 		iTodayColIndex = -1;
 		iTodayRowIndex = -1;
-		InitUI();			
+		InitUI();
 
 		if ((iTodayRowIndex > -1) && (iTodayColIndex > -1)) {
 			changeSelection(iTodayRowIndex, iTodayColIndex, false, false);
-		}		
+		}
 	}
 
 	private void InitUI() {
@@ -396,7 +398,7 @@ class ECalendarTable extends JTable {
 
 			@Override
 			public int getRowCount() {
-				// TODO Auto-generated method stub				
+				// TODO Auto-generated method stub
 				return 6 + (((FCalendar.getMaxDaysInMonth() - 28) + (FCalendar.getFirstDayOfMonth() - 1)) / 7);
 			}
 
@@ -417,8 +419,8 @@ class ECalendarTable extends JTable {
 					}
 				}
 			}
-		});		
-		
+		});
+
 		setAutoResizeMode(AUTO_RESIZE_ALL_COLUMNS);
 		setRowHeight(20);
 		setAutoscrolls(true);
@@ -432,7 +434,7 @@ class ECalendarTable extends JTable {
 		if ((Calendar.getInstance().get(Calendar.DATE) == aDate) && FCalendar.isThisYear() && FCalendar.isThisMonth()) {
 			iTodayRowIndex = aRow;
 			iTodayColIndex = aCol;
-			// changeSelection(aRow, aCol, false, true);			
+			// changeSelection(aRow, aCol, false, true);
 		}
 	}
 
