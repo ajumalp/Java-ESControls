@@ -1,6 +1,5 @@
 package com.es.ui;
 
-import java.awt.BorderLayout;
 import java.awt.Dimension;
 
 import javax.swing.JFrame;
@@ -16,12 +15,14 @@ public class ESMainTest extends JFrame {
 
 	public ESMainTest() {
 		setLocationByPlatform(true);
-		setSize(new Dimension(250, 250));
+		setSize(new Dimension(450, 450));
 		setTitle("This is a test project");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		
+		getContentPane().setLayout(null);
+
 		EDateTimePicker dateTimePicker = new EDateTimePicker();
-		getContentPane().add(dateTimePicker, BorderLayout.NORTH);
+		dateTimePicker.setBounds(10, 26, 152, 23);
+		getContentPane().add(dateTimePicker);
 		setVisible(true);
 	}
 }

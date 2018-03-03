@@ -22,6 +22,7 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.JToolBar;
@@ -49,10 +50,11 @@ public class EDateTimePicker extends JPanel implements ActionListener {
 
 	private void InitUI() {
 		FTextArea = new JTextField();
-		FSelectButton = new JButton("...");
+		FSelectButton = new JButton(new ImageIcon(Res.Images.PNG.Size16.DateTime));
 
 		FTextArea.setEditable(false);
 		FSelectButton.addActionListener(this);
+		FSelectButton.setPreferredSize(new Dimension(22, 22));
 
 		setLayout(new BorderLayout());
 		add(FTextArea, BorderLayout.CENTER);
@@ -142,6 +144,7 @@ class ECalendar extends JDialog implements ItemListener, ActionListener {
 	private EDateTime FSelectedDate;
 	private JButton FPreYear, FPreMonth, FNextYear, FNextMonth, FToday;
 	private IECalendarListener FCalendarListener;
+	private JScrollPane spCalendar;
 
 	public ECalendar() {
 		// TODO Auto-generated constructor stub
@@ -208,7 +211,7 @@ class ECalendar extends JDialog implements ItemListener, ActionListener {
 		FNavigPnl.add(cbMonths);
 		JPanel varContPnl = new JPanel();
 		varContPnl.setLayout(new BorderLayout());
-		varContPnl.setBorder(BorderFactory.createRaisedSoftBevelBorder());
+		varContPnl.setBorder(BorderFactory.createRaisedBevelBorder());
 		setContentPane(varContPnl);
 		varContPnl.add(FNavigPnl, BorderLayout.NORTH);
 
@@ -243,10 +246,11 @@ class ECalendar extends JDialog implements ItemListener, ActionListener {
 	public void ShowAt(Point aPoint) {
 		setVisible(true);
 		setLocation(aPoint);
+		FCalTable.requestFocus();
 	}
 
 	private int getTotalHeight() {
-		return (FCalTable.getRowHeight() * FCalTable.getRowCount()) + FNavigPnl.getHeight() + 5;
+		return (FCalTable.getRowHeight() * FCalTable.getRowCount()) + FNavigPnl.getHeight() + 27;
 	}
 
 	@Override
@@ -267,15 +271,20 @@ class ECalendar extends JDialog implements ItemListener, ActionListener {
 	}
 
 	private void UpdateCalendar(boolean aRepaint) {
-		if (FCalTable != null) {
-			remove(FCalTable);
+		if (spCalendar != null) {
+			remove(spCalendar);
+			spCalendar = null;
 		}
 
 		FSelectedDate.setYear(cbYears.getItemAt(cbYears.getSelectedIndex()));
 		FSelectedDate.setMonth(cbMonths.getSelectedIndex());
 		FCalTable = new ECalendarTable(getSelectedDate());
+		spCalendar = new JScrollPane(FCalTable);
+		spCalendar.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1));
 
-		getContentPane().add(FCalTable, BorderLayout.CENTER);
+		FCalTable.setFillsViewportHeight(true);
+		getContentPane().add(spCalendar, BorderLayout.CENTER);
+		FCalTable.updateUI();
 		FCalTable.AddOnSelectListener(new IECalendarTableListener() {
 
 			@Override
@@ -310,14 +319,28 @@ class ECalendar extends JDialog implements ItemListener, ActionListener {
 		cbMonths.setSelectedIndex(getSelectedDate().getMonth());
 	}
 
-	private void SelectCombItem(JComboBox<?> aCombo, int aValue) {
+	private void SelectCombItem(JComboBox<?> aCombo, JComboBox<?> aParentCombo, int aValue) {
 		int iSelectedYearIndex = aCombo.getSelectedIndex();
 		int iNewIndex = iSelectedYearIndex + aValue;
 
-		if ((aValue < 0) && (iNewIndex >= 0)) {
-			aCombo.setSelectedIndex(iNewIndex);
-		} else if ((aValue > 0) && (iNewIndex < aCombo.getItemCount())) {
-			aCombo.setSelectedIndex(iNewIndex);
+		if (aValue == -1) {
+			if (iNewIndex >= 0) {
+				aCombo.setSelectedIndex(iNewIndex);
+			} else {
+				aCombo.setSelectedIndex(aCombo.getItemCount() - 1);
+				if (aParentCombo != null) {
+					SelectCombItem(aParentCombo, null, aValue);
+				}
+			}
+		} else if (aValue == 1) {
+			if (iNewIndex < aCombo.getItemCount()) {
+				aCombo.setSelectedIndex(iNewIndex);
+			} else {
+				aCombo.setSelectedIndex(0);
+				if (aParentCombo != null) {
+					SelectCombItem(aParentCombo, null, aValue);
+				}
+			}
 		}
 	}
 
@@ -328,13 +351,13 @@ class ECalendar extends JDialog implements ItemListener, ActionListener {
 		if (varSource == FToday) {
 			setSelectedDate(EDateTime.Now());
 		} else if (varSource == FPreYear) {
-			SelectCombItem(cbYears, -1);
+			SelectCombItem(cbYears, null, -1);
 		} else if (varSource == FPreMonth) {
-			SelectCombItem(cbMonths, -1);
+			SelectCombItem(cbMonths, cbYears, -1);
 		} else if (varSource == FNextMonth) {
-			SelectCombItem(cbMonths, 1);
+			SelectCombItem(cbMonths, cbYears, 1);
 		} else if (varSource == FNextYear) {
-			SelectCombItem(cbYears, 1);
+			SelectCombItem(cbYears, null, 1);
 		}
 	}
 }
@@ -346,6 +369,7 @@ interface IECalendarTableListener {
 class ECalendarTable extends JTable {
 
 	private static final long serialVersionUID = 1L;
+	private static final String[] WEEK_NAMES = new DateFormatSymbols().getShortWeekdays();
 
 	private ECalendarTable FContext;
 	private TableModel FTableModal;
@@ -361,13 +385,12 @@ class ECalendarTable extends JTable {
 		iTodayColIndex = -1;
 		iTodayRowIndex = -1;
 		InitUI();
-
-		if ((iTodayRowIndex > -1) && (iTodayColIndex > -1)) {
-			changeSelection(iTodayRowIndex, iTodayColIndex, false, false);
-		}
 	}
 
 	private void InitUI() {
+		DefaultTableCellRenderer varRender = new DefaultTableCellRenderer();
+		varRender.setHorizontalAlignment(SwingConstants.CENTER);
+
 		FTableModal = new AbstractTableModel() {
 
 			private static final long serialVersionUID = 1L;
@@ -376,20 +399,19 @@ class ECalendarTable extends JTable {
 			public Object getValueAt(int aRowIndex, int aColumnIndex) {
 				// TODO Auto-generated method stub
 				if (aRowIndex == 0) {
-					DefaultTableCellRenderer varRender = new DefaultTableCellRenderer();
-					varRender.setHorizontalAlignment(SwingConstants.CENTER);
 					getColumnModel().getColumn(aColumnIndex).setCellRenderer(varRender);
-					return new DateFormatSymbols().getShortWeekdays()[aColumnIndex + 1];
-				} else if (aRowIndex == 1) {
 					if (aColumnIndex >= (FCalendar.getFirstDayOfMonth())) {
 						int iDay = aColumnIndex - FCalendar.getFirstDayOfMonth() + 1;
 						FocusOnToday(iDay, aRowIndex, aColumnIndex);
 						return iDay;
 					}
 				} else {
-					int iDay = ((aRowIndex - 1) * 7) + (aColumnIndex - FCalendar.getFirstDayOfMonth() + 1);
+					int iDay = (aRowIndex * 7) + (aColumnIndex - FCalendar.getFirstDayOfMonth() + 1);
 					if (iDay <= FCalendar.getMaxDaysInMonth()) {
 						FocusOnToday(iDay, aRowIndex, aColumnIndex);
+						if (iDay == FCalendar.getMaxDaysInMonth()) {
+							FocusOnToday(-1, iTodayRowIndex, iTodayColIndex);
+						}
 						return iDay;
 					}
 				}
@@ -397,9 +419,21 @@ class ECalendarTable extends JTable {
 			}
 
 			@Override
+			public boolean isCellEditable(int rowIndex, int columnIndex) {
+				// TODO Auto-generated method stub
+				return false;
+			}
+
+			@Override
+			public String getColumnName(int aColIndex) {
+				// TODO Auto-generated method stub
+				return WEEK_NAMES[aColIndex + 1];
+			}
+
+			@Override
 			public int getRowCount() {
 				// TODO Auto-generated method stub
-				return 6 + (((FCalendar.getMaxDaysInMonth() - 28) + (FCalendar.getFirstDayOfMonth() - 1)) / 7);
+				return 5 + (((FCalendar.getMaxDaysInMonth() - 28) + (FCalendar.getFirstDayOfMonth() - 1)) / 7);
 			}
 
 			@Override
@@ -414,13 +448,17 @@ class ECalendarTable extends JTable {
 			public void mousePressed(MouseEvent e) {
 				// TODO Auto-generated method stub
 				if (e.getClickCount() == 2) {
-					if (FCalendarTableListener != null) {
+					if (getModel().getValueAt(getSelectedRow(), getSelectedColumn()).toString().trim().isEmpty()) {
+						return;
+					} else if (FCalendarTableListener != null) {
 						FCalendarTableListener.OnItemSelectListener(FContext);
 					}
 				}
 			}
 		});
 
+		getTableHeader().setReorderingAllowed(false);
+		getTableHeader().setResizingAllowed(false);
 		setAutoResizeMode(AUTO_RESIZE_ALL_COLUMNS);
 		setRowHeight(20);
 		setAutoscrolls(true);
@@ -431,10 +469,12 @@ class ECalendarTable extends JTable {
 	}
 
 	private void FocusOnToday(int aDate, int aRow, int aCol) {
-		if ((Calendar.getInstance().get(Calendar.DATE) == aDate) && FCalendar.isThisYear() && FCalendar.isThisMonth()) {
+		if (aDate == -1) {
+			changeSelection(aRow, aCol, false, false);
+		} else if ((Calendar.getInstance().get(Calendar.DATE) == aDate) && FCalendar.isThisYear()
+				&& FCalendar.isThisMonth()) {
 			iTodayRowIndex = aRow;
 			iTodayColIndex = aCol;
-			// changeSelection(aRow, aCol, false, true);
 		}
 	}
 
